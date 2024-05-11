@@ -11,7 +11,7 @@ class VGGNet(nn.Module):
         """Select conv1_1 ~ conv5_1 activation maps."""
         super(VGGNet, self).__init__()
         self.select = ['9', '36']
-        self.vgg = models.vgg19(pretrained=True).features
+        self.vgg = models.vgg19(weights=models.VGG19_Weights.IMAGENET1K_V1).features
 
     def forward(self, x):
         """Extract multiple convolutional feature maps."""
@@ -211,16 +211,18 @@ class CycleGANModel(BaseModel):
         # remove identity loss, because we replace it by perceptual loss
 
         # Identity loss
-        # if lambda_idt > 0:
-        #     # G_A should be identity if real_B is fed: ||G_A(B) - B||
-        #     self.idt_A = self.netG_A(self.real_B)
-        #     self.loss_idt_A = self.criterionIdt(self.idt_A, self.real_B) * lambda_B * lambda_idt
-        #     # G_B should be identity if real_A is fed: ||G_B(A) - A||
-        #     self.idt_B = self.netG_B(self.real_A)
-        #     self.loss_idt_B = self.criterionIdt(self.idt_B, self.real_A) * lambda_A * lambda_idt
-        # else:
-        self.loss_idt_A = 0
-        self.loss_idt_B = 0
+        if lambda_idt > 0:
+            # G_A should be identity if real_B is fed: ||G_A(B) - B||
+            self.idt_A = self.netG_A(self.real_B)
+            #self.loss_idt_A = self.criterionIdt(self.idt_A, self.real_B) * lambda_B * lambda_idt
+            # G_B should be identity if real_A is fed: ||G_B(A) - A||
+            self.idt_B = self.netG_B(self.real_A)
+            #self.loss_idt_B = self.criterionIdt(self.idt_B, self.real_A) * lambda_A * lambda_idt
+            self.loss_idt_A = 0
+            self.loss_idt_B = 0
+        else:
+            self.loss_idt_A = 0
+            self.loss_idt_B = 0
 
         # GAN loss D_A(G_A(A))
         self.loss_G_A = self.criterionGAN(self.netD_A(self.fake_B), True)
