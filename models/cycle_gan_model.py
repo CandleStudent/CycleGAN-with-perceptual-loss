@@ -3,7 +3,24 @@ import itertools
 from util.image_pool import ImagePool
 from .base_model import BaseModel
 from . import networks
+from torchvision import models
+import torch.nn as nn
 
+class VGGNet(nn.Module):
+    def __init__(self):
+        """Select conv1_1 ~ conv5_1 activation maps."""
+        super(VGGNet, self).__init__()
+        self.select = ['9', '36']
+        self.vgg = models.vgg19(pretrained=True).features
+
+    def forward(self, x):
+        """Extract multiple convolutional feature maps."""
+        features = []
+        for name, layer in self.vgg._modules.items():
+            x = layer(x)
+            if name in self.select:
+                features.append(x)
+        return features[0], features[1]
 
 class CycleGANModel(BaseModel):
     """
@@ -96,6 +113,11 @@ class CycleGANModel(BaseModel):
             self.optimizers.append(self.optimizer_G)
             self.optimizers.append(self.optimizer_D)
 
+
+        # add perceptual component
+        self.vgg = VGGNet().cuda().eval()
+
+
     def set_input(self, input):
         """Unpack input data from the dataloader and perform necessary pre-processing steps.
 
@@ -149,21 +171,56 @@ class CycleGANModel(BaseModel):
         self.loss_D_B = self.backward_D_basic(self.netD_B, self.real_A, fake_A)
 
     def backward_G(self):
+
+        # calculate perceptual loss
+        perceptual = True  # False if you dont want perceptual loss in that training
+
+        if perceptual:
+
+            with torch.no_grad():
+
+                A = self.real_A
+                B = self.real_B
+
+                c = nn.MSELoss()
+
+                rx = self.netG_B(self.netG_A(A))
+                ry = self.netG_A(self.netG_B(B))
+
+                fx1, fx2 = self.vgg(A)
+                fy1, fy2 = self.vgg(B)
+
+                frx1, frx2 = self.vgg(rx)
+                fry1, fry2 = self.vgg(ry)
+
+                m1 = c(fx1, frx1)
+                m2 = c(fx2, frx2)
+
+                m3 = c(fy1, fry1)
+                m4 = c(fy2, fry2)
+
+                self.perceptual_loss = (m1 + m2 + m3 + m4) * 0.00001 * 0.5
+        else:
+            self.perceptual_loss = 0
+
         """Calculate the loss for generators G_A and G_B"""
         lambda_idt = self.opt.lambda_identity
         lambda_A = self.opt.lambda_A
         lambda_B = self.opt.lambda_B
+
+        # remove identity loss, because we replace it by perceptual loss
+
         # Identity loss
-        if lambda_idt > 0:
-            # G_A should be identity if real_B is fed: ||G_A(B) - B||
-            self.idt_A = self.netG_A(self.real_B)
-            self.loss_idt_A = self.criterionIdt(self.idt_A, self.real_B) * lambda_B * lambda_idt
-            # G_B should be identity if real_A is fed: ||G_B(A) - A||
-            self.idt_B = self.netG_B(self.real_A)
-            self.loss_idt_B = self.criterionIdt(self.idt_B, self.real_A) * lambda_A * lambda_idt
-        else:
-            self.loss_idt_A = 0
-            self.loss_idt_B = 0
+        # if lambda_idt > 0:
+        #     # G_A should be identity if real_B is fed: ||G_A(B) - B||
+        #     self.idt_A = self.netG_A(self.real_B)
+        #     self.loss_idt_A = self.criterionIdt(self.idt_A, self.real_B) * lambda_B * lambda_idt
+        #     # G_B should be identity if real_A is fed: ||G_B(A) - A||
+        #     self.idt_B = self.netG_B(self.real_A)
+        #     self.loss_idt_B = self.criterionIdt(self.idt_B, self.real_A) * lambda_A * lambda_idt
+        # else:
+        self.loss_idt_A = 0
+        self.loss_idt_B = 0
 
         # GAN loss D_A(G_A(A))
         self.loss_G_A = self.criterionGAN(self.netD_A(self.fake_B), True)
@@ -174,7 +231,7 @@ class CycleGANModel(BaseModel):
         # Backward cycle loss || G_A(G_B(B)) - B||
         self.loss_cycle_B = self.criterionCycle(self.rec_B, self.real_B) * lambda_B
         # combined loss and calculate gradients
-        self.loss_G = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_idt_A + self.loss_idt_B
+        self.loss_G = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_idt_A + self.loss_idt_B + self.perceptual_loss
         self.loss_G.backward()
 
     def optimize_parameters(self):
