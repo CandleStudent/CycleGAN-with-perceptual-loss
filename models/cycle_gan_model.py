@@ -173,7 +173,7 @@ class CycleGANModel(BaseModel):
     def backward_G(self):
 
         # calculate perceptual loss
-        perceptual = True  # False if you dont want perceptual loss in that training
+        perceptual = True # False if you dont want perceptual loss in that training
 
         if perceptual:
 
@@ -208,7 +208,7 @@ class CycleGANModel(BaseModel):
         lambda_A = self.opt.lambda_A
         lambda_B = self.opt.lambda_B
 
-        # remove identity loss, because we replace it by perceptual loss
+        # remove identity loss, because we replace it with perceptual loss
 
         # Identity loss
         if lambda_idt > 0:
