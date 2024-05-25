@@ -14,7 +14,6 @@ class VGGNet(nn.Module):
         self.vgg = models.vgg19(weights=models.VGG19_Weights.IMAGENET1K_V1).features
 
     def forward(self, x):
-        """Extract multiple convolutional feature maps."""
         features = []
         for name, layer in self.vgg._modules.items():
             x = layer(x)
@@ -187,11 +186,11 @@ class CycleGANModel(BaseModel):
                 rx = self.netG_B(self.netG_A(A))
                 ry = self.netG_A(self.netG_B(B))
 
-                fx1, fx2 = self.vgg(A)
-                fy1, fy2 = self.vgg(B)
+                fx1, fx2 = self.vgg(A) # features of real_A
+                fy1, fy2 = self.vgg(B) # features of real_B
 
-                frx1, frx2 = self.vgg(rx)
-                fry1, fry2 = self.vgg(ry)
+                frx1, frx2 = self.vgg(rx) # features of cycle A
+                fry1, fry2 = self.vgg(ry) # features of cycle B
 
                 m1 = c(fx1, frx1)
                 m2 = c(fx2, frx2)
