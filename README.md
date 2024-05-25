@@ -1,7 +1,9 @@
 
-<img src='imgs/horse2zebra.gif' align="right" width=384>
+# Datasets, model and checkpoints/results for photo2roerich task
 
-<br><br><br>
+- [checkpoints (model and intermediate results)](https://disk.yandex.ru/d/iKDMghvBhKGzhw)
+- [results](https://disk.yandex.ru/d/lTfaUabFZ7ihrg)
+- [dataset](https://disk.yandex.ru/d/z1jdPUfvom3Z7A)
 
 # CycleGAN and pix2pix in PyTorch
 
