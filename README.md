@@ -5,6 +5,10 @@
 - [results](https://disk.yandex.ru/d/Y_NF9avhDHEkaQ)
 - [dataset](https://disk.yandex.ru/d/z1jdPUfvom3Z7A)
 
+# How to work with roerich dataset
+
+Download [dataset](https://disk.yandex.ru/d/z1jdPUfvom3Z7A) and put it in datasets directory. Then you can run run.ipynb in jupyter notebook to train network on this dataset or to conduct tests. You can adjust commands in run.ipynb as you want
+
 # CycleGAN and pix2pix in PyTorch
 
 **New**:  Please check out [img2img-turbo](https://github.com/GaParmar/img2img-turbo) repo that includes both pix2pix-turbo and CycleGAN-Turbo. Our new one-step image-to-image translation methods can support both paired and unpaired training and produce better results by leveraging the pre-trained StableDiffusion-Turbo model. The inference time for 512x512 image is 0.29 sec on A6000 and 0.11 sec on A100.
